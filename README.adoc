@@ -1,0 +1,45 @@
+= pgn-tools
+ifdef::env-github[]
+Gavin Kondrath <78187175+gavink97@users.noreply.github.com>
+v1.0, 2025-11-02
+:homepage: https://gav.ink
+endif::[]
+:toc:
+:icons: font
+
+== Why this project exists
+I was not happy with the performance of similar chess tools using python
+
+== Features
+    - query games from pgn files
+
+== Getting started
+Download the binary or build from source
+
+== Planned additions
+* [ ] Convert games from other formats to pgn
+* [ ] Reconcile games into one database
+* [ ] Create tactics puzzles from games
+
+== Contributing
+
+I'm open to contributions.
+
+== Support
+
+If you're feeling generous you can support this project and others I make on
+https://ko-fi.com/E1E119NG8M[Ko-fi] :)
+
+== Star
+
+If you've found this useful please give it a star ⭐️ as it helps other developers
+find my repos.
+
+++++
+<a href="https://star-history.com/#gavink97/pgn-tools&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=gavink97/pgn-tools&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=gavink97/pgn-tools&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=gavink97/pgn-tools&type=Date" />
+ </picture>
+</a>

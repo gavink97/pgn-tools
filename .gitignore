@@ -1,0 +1,4 @@
+.DS_STORE
+*.pgn
+# Added by goreleaser init:
+dist/
