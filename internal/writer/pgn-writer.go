@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gavink97/pgn-tools/internal/global"
 	"github.com/gavink97/pgn-tools/internal/types"
 )
 
@@ -14,7 +15,13 @@ func WritePGN(filename string, game *types.Game) {
 		log.Fatal(err)
 	}
 
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+		if err != nil {
+			global.Logger.Error("an unexpected error occured closing file: %s\n%v", filename, err)
+			os.Exit(1)
+		}
+	}()
 
 	content := formatPGN(game)
 

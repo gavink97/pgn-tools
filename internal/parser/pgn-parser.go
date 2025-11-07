@@ -84,25 +84,25 @@ func NewPGNGame(str string) *types.Game {
 }
 
 func ParsePGN(fileName string) ([]*types.Game, error) {
-    file, err := os.ReadFile(fileName)
-    if err != nil {
-        return nil, err
-    }
+	file, err := os.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
 
-    content := string(file)
-    chunks := strings.Split(content, "[Event")
-    
-    var games []*types.Game
-    for _, chunk := range chunks {
-        chunk = strings.TrimSpace(chunk)
-        if chunk == "" {
-            continue
-        }
-        
-        gameText := "[Event " + chunk
-        game := NewPGNGame(gameText)
-        games = append(games, game)
-    }
-    
-    return games, nil
+	content := string(file)
+	chunks := strings.Split(content, `[Event "`)
+
+	var games []*types.Game
+	for _, chunk := range chunks {
+		chunk = strings.TrimSpace(chunk)
+		if chunk == "" {
+			continue
+		}
+
+		gameText := `[Event "` + chunk
+		game := NewPGNGame(gameText)
+		games = append(games, game)
+	}
+
+	return games, nil
 }

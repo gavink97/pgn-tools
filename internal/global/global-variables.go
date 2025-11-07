@@ -6,6 +6,5 @@ import (
 
 var ProgramLevel = &slog.LevelVar{}
 var Logger *slog.Logger
-var Args []string
 
-var VERSION = 1.0
+var VERSION = "1.0.1"

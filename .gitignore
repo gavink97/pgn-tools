@@ -1,5 +1,3 @@
 .DS_STORE
-*.pgn
 token
-# Added by goreleaser init:
 dist/

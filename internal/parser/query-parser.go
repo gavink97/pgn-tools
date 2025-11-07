@@ -11,8 +11,8 @@ import (
 )
 
 type QueryCondition struct {
-	Key string
-	Op string
+	Key   string
+	Op    string
 	Value string
 }
 
@@ -52,8 +52,8 @@ func ParseQuery(keys string) (*Query, error) {
 		}
 
 		query.Conditions = append(query.Conditions, QueryCondition{
-			Key: key,
-			Op: op,
+			Key:   key,
+			Op:    op,
 			Value: value,
 		})
 
@@ -65,7 +65,7 @@ func ParseQuery(keys string) (*Query, error) {
 
 func (q *Query) Match(game *types.Game) (bool, error) {
 	for _, condition := range q.Conditions {
-		matches, err := condition.evaluate(game)
+		matches, err := condition.Evaluate(game)
 		if err != nil {
 			return false, err
 		}
@@ -78,29 +78,30 @@ func (q *Query) Match(game *types.Game) (bool, error) {
 	return true, nil
 }
 
-func (c *QueryCondition) evaluate(game *types.Game) (bool, error) {
-	if strings.ToLower(c.Key) == "player" {
-		return c.evaluatePlayer(game)
-	}
-
+func (c *QueryCondition) Evaluate(game *types.Game) (bool, error) {
 	computedFunc, exists := computedFields[strings.ToLower(c.Key)]
 	if exists {
-		value := computedFunc(game)
+		value, err := computedFunc(game, c)
+		if err != nil {
+			return false, fmt.Errorf("an unexpected error occured: %v", err)
+		}
 
-		switch v:= value.(type) {
+		switch v := value.(type) {
+		case bool:
+			return v, nil
 		case string:
-			return c.evaluateString(v)
+			return c.EvaluateString(v)
 		case int:
-			return c.evaluateInt(int64(v))
+			return c.EvaluateInt(int64(v))
 		case int64:
-			return c.evaluateInt(v)
+			return c.EvaluateInt(v)
 		default:
 			return false, fmt.Errorf("unsupported computed field type: %v", value)
 		}
 	}
 
 	gameValue := reflect.ValueOf(game).Elem()
-	field, found := findField(gameValue, c.Key)
+	field, found := FindField(gameValue, c.Key)
 
 	if !found {
 		return false, fmt.Errorf("unknown field: %s", c.Key)
@@ -108,15 +109,15 @@ func (c *QueryCondition) evaluate(game *types.Game) (bool, error) {
 
 	switch field.Kind() {
 	case reflect.String:
-		return c.evaluateString(field.String())
+		return c.EvaluateString(field.String())
 	case reflect.Int:
-		return c.evaluateInt(field.Int())
+		return c.EvaluateInt(field.Int())
 	default:
 		return false, fmt.Errorf("unsupport field type: %s", field.Kind())
 	}
 }
 
-func (c *QueryCondition) evaluateString(value string) (bool, error) {
+func (c *QueryCondition) EvaluateString(value string) (bool, error) {
 	value = strings.ToLower(value)
 	cValue := strings.ToLower(c.Value)
 
@@ -130,7 +131,7 @@ func (c *QueryCondition) evaluateString(value string) (bool, error) {
 	}
 }
 
-func (c *QueryCondition) evaluateInt(value int64) (bool, error) {
+func (c *QueryCondition) EvaluateInt(value int64) (bool, error) {
 	intValue, err := strconv.ParseInt(c.Value, 10, 64)
 	if err != nil {
 		return false, fmt.Errorf("invalid integer value: %v", c.Value)
@@ -154,44 +155,53 @@ func (c *QueryCondition) evaluateInt(value int64) (bool, error) {
 	}
 }
 
-func (c *QueryCondition) evaluatePlayer(game *types.Game) (bool, error) {
-	white, err := c.evaluateString(game.White)
-	if err != nil {
-		return false, err
-	}
+func FindField(value reflect.Value, fieldName string) (reflect.Value, bool) {
+	fieldName = strings.ToLower(fieldName)
+	vType := value.Type()
 
-	black, err := c.evaluateString(game.Black)
-	if err != nil {
-		return false, err
-	}
+	for i := 0; i < value.NumField(); i++ {
+		field := value.Field(i)
+		structField := vType.Field(i)
 
-	return white || black, nil
-}
-
-func findField(value reflect.Value, fieldName string) (reflect.Value, bool) {
-		fieldName = strings.ToLower(fieldName)
-		vType := value.Type()
-
-		for i := 0; i < value.NumField(); i++ {
-			field := value.Field(i)
-			structField := vType.Field(i)
-
-			if strings.ToLower(structField.Name) == fieldName {
+		if strings.ToLower(structField.Name) == fieldName {
 			return field, true
 		}
 	}
 	return reflect.Value{}, false
 }
 
-var computedFields = map[string]func(*types.Game) any {
-	"elo": func(g *types.Game) any {
+var computedFields = map[string]func(*types.Game, *QueryCondition) (any, error){
+	"elo": func(g *types.Game, qc *QueryCondition) (any, error) {
 		if g.WhiteElo > 0 && g.BlackElo > 0 {
-			return min(g.WhiteElo, g.BlackElo)
+			return min(g.WhiteElo, g.BlackElo), nil
 		} else {
-			return 0
+			return 0, nil
 		}
 	},
-	"player": func(g *types.Game) any {
-		return ""
+	"player": func(g *types.Game, qc *QueryCondition) (any, error) {
+		if qc.Op == "!=" {
+			for _, player := range []string{g.White, g.Black} {
+				player = strings.ToLower(player)
+				value := strings.ToLower(qc.Value)
+
+				if strings.Contains(player, value) {
+					return false, nil
+				}
+			}
+
+			return true, nil
+		}
+
+		white, err := qc.EvaluateString(g.White)
+		if err != nil {
+			return false, err
+		}
+
+		black, err := qc.EvaluateString(g.Black)
+		if err != nil {
+			return false, err
+		}
+
+		return white || black, nil
 	},
 }

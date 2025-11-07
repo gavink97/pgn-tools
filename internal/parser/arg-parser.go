@@ -14,26 +14,26 @@ import (
 	"github.com/gavink97/pgn-tools/internal/help"
 )
 
-func ParseArgs() {
-	argLength := len(global.Args)
+func ParseArgs(args []string) {
+	argLength := len(args)
 	var program string
 	var argument string
 
 	if argLength == 0 {
 		program = ""
 	} else {
-		program = global.Args[0]
+		program = args[0]
 	}
 
 	if argLength >= 2 {
-		argument = global.Args[1]
+		argument = args[1]
 	} else {
 		argument = ""
 	}
 
 	switch program {
 	case "bug":
-		openBugReport()	
+		openBugReport()
 
 	case "version":
 		printVersion()
@@ -42,60 +42,60 @@ func ParseArgs() {
 		printHelp(argument)
 
 	case "query":
-		ParseFlags()
-		verifyPGNInput(argument)
+		ParseFlags(args)
+		VerifyPGNInput(argument)
 
 	case "convert":
-	case "merge":	
+	case "merge":
 		global.Logger.Info(fmt.Sprintf("%v is a planned feature but is current unimplemented. Feel free to contribute an implementation.", program))
 		os.Exit(0)
 
 	default:
-		global.Logger.Info(fmt.Sprintf("unknown command: %v", program))
-		printHelp("")
+		if program != "" {
+			printHelp(program)
+		} else {
+			printHelp("")
+		}
 	}
 }
 
-func ParseFlags() {	
-	args := os.Args[1:]
-
+func ParseFlags(args []string) {
 	for _, arg := range args {
 		if strings.Contains(arg, "--verbose") {
-			global.ProgramLevel.Set(slog.LevelDebug)	
+			global.ProgramLevel.Set(slog.LevelDebug)
 		}
 
 	}
 }
 
 func printVersion() {
-		global.Logger.Info(fmt.Sprintf("pgn-tools version %v %v/%v", global.VERSION, runtime.GOOS, runtime.GOARCH))
-		os.Exit(0)
+	fmt.Printf("pgn-tools version %s %s/%s\n", global.VERSION, runtime.GOOS, runtime.GOARCH)
+	os.Exit(0)
 }
 
-// need to write help paragraphs for commands 
 func printHelp(command string) {
 	switch command {
 	case "":
-		global.Logger.Info(help.Default)
+		fmt.Println(help.Default)
 	case "bug":
-		global.Logger.Info(help.Default)
+		fmt.Println(help.Bug)
 	case "convert":
-		global.Logger.Info(help.Default)
+		fmt.Println(help.Convert)
 	case "merge":
-		global.Logger.Info(help.Default)
+		fmt.Println(help.Merge)
 	case "query":
-		global.Logger.Info(help.Default)
+		fmt.Println(help.Query)
 	case "version":
-		global.Logger.Info(help.Default)
-	default:	
+		fmt.Println(help.Version)
+	default:
 		global.Logger.Info(fmt.Sprintf("unknown command: %v", command))
-		global.Logger.Info(help.Default)
+		fmt.Println(help.Default)
 	}
 
 	os.Exit(0)
 }
 
-func verifyPGNInput(file string) {
+func VerifyPGNInput(file string) {
 	if file == "" {
 		global.Logger.Error("Enter input filepath")
 		os.Exit(1)
@@ -114,17 +114,18 @@ func verifyPGNInput(file string) {
 	}
 
 	_, err := os.Stat(file)
-	if err != nil {	
+	if err != nil {
 		global.Logger.Error(fmt.Sprintf("Invalid Filepath: %s", file))
 		os.Exit(1)
 	}
 }
 
+// include version, etc
 func openBugReport() {
 	var cmd string
 	var args []string
 
-	url := "https://github.com/gavink97/pgn-tools/issues/new?labels=bug&title=Error:+Missing+host+permission+for+the+tab+or+frames&body=Please+check+if+an+issue+containing+this+error+exists+before+submitting.+Also+try+to+provide+any+steps+we+can+use+to+reproduce+the+error."
+	url := "https://github.com/gavink97/pgn-tools/issues/new?labels=bug&title=Title&body=Please+check+if+an+issue+containing+this+error+exists+before+submitting.+Also+try+to+provide+any+steps+we+can+use+to+reproduce+the+error."
 
 	switch runtime.GOOS {
 	case "windows":
