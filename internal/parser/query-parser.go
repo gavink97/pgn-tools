@@ -2,6 +2,8 @@ package parser
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -204,4 +206,58 @@ var computedFields = map[string]func(*types.Game, *QueryCondition) (any, error){
 
 		return white || black, nil
 	},
+}
+
+func (query *Query) WriteTo(input string) string {
+	output := global.Output
+	ext := filepath.Ext(input)
+	dir, file := filepath.Split(input)
+	baseName := strings.TrimSuffix(file, ext)
+
+	fallback := func() {
+		output = fmt.Sprintf("%s%s_modified%s", dir, baseName, ext)
+		global.Logger.Info(fmt.Sprintf("Using fallback: %s", output))
+	}
+
+	if output == "" {
+		output_name := ""
+
+		var kvPairs []string
+		for _, c := range query.Conditions {
+			kv := strings.Join([]string{c.Key, c.Op, c.Value}, "")
+			kvPairs = append(kvPairs, kv)
+		}
+
+		if len(kvPairs) > 0 {
+			output_name = strings.Join(kvPairs, "_")
+		}
+
+		if output_name != "" {
+			output = fmt.Sprintf("%s%s_%s%s", dir, baseName, output_name, ext)
+		} else {
+			fallback()
+		}
+	}
+
+	if strings.HasPrefix(output, "~/") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			global.Logger.Warn(fmt.Sprintf("Error getting user home directory: %v", err))
+			fallback()
+		} else {
+			output = filepath.Join(homeDir, global.Output[2:])
+		}
+	}
+
+	if filepath.IsLocal(output) {
+		wd, err := os.Getwd()
+		if err != nil {
+			global.Logger.Warn(fmt.Sprintf("Error getting working directory: %v", err))
+			fallback()
+		} else {
+			output = filepath.Join(filepath.Clean(wd), output)
+		}
+	}
+
+	return output
 }

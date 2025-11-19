@@ -54,7 +54,7 @@ func TestParsePGN(t *testing.T) {
 		t.Errorf("An error occured : %v", err)
 	}
 
-	file := filepath.Join(filepath.Dir(filepath.Dir(dir)), "sample.pgn")
+	file := filepath.Join(filepath.Dir(filepath.Dir(dir)), "samples/sample.pgn")
 
 	VerifyPGNInput(file)
 	result, err := ParsePGN(file)

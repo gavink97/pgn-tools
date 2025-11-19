@@ -1,7 +1,7 @@
 = pgn-tools
 ifdef::env-github[]
 Gavin Kondrath <78187175+gavink97@users.noreply.github.com>
-v1.0, 2025-11-02
+v1.0.2, 2025-11-02
 :homepage: https://gav.ink
 endif::[]
 :toc:
@@ -12,14 +12,25 @@ I was not happy with the performance of similar chess tools using python
 
 == Features
     - query games from pgn files
+	- reconcile multiple pgn files into one
+	- convert cbh files to pgn (experimental*)
 
 == Getting started
 Download the binary or build from source
 
 == Planned additions
-* [ ] Convert games from other formats to pgn
-* [ ] Reconcile games into one database
+* [x] Convert games from other formats to pgn
+* [x] Reconcile games into one database
 * [ ] Create tactics puzzles from games
+
+== Experimental
+Convert is an experimental feature not yet fully supported, current drawbacks to using convert:
+	- No check / checkmate marks
+	- No variations
+	- No null moves
+	- No games that feature a promotion
+	- No games that start from a FEN position
+	- Incomplete dates default to November 30th
 
 == Contributing
 

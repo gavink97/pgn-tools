@@ -43,12 +43,15 @@ func ParseArgs(args []string) {
 
 	case "query":
 		ParseFlags(args)
-		VerifyPGNInput(argument)
+		if !VerifyPGNInput(argument) {
+			os.Exit(1)
+		}
+
+	case "merge":
+		ParseFlags(args)
 
 	case "convert":
-	case "merge":
-		global.Logger.Info(fmt.Sprintf("%v is a planned feature but is current unimplemented. Feel free to contribute an implementation.", program))
-		os.Exit(0)
+		ParseFlags(args)
 
 	default:
 		if program != "" {
@@ -60,11 +63,18 @@ func ParseArgs(args []string) {
 }
 
 func ParseFlags(args []string) {
-	for _, arg := range args {
-		if strings.Contains(arg, "--verbose") {
+	for i, arg := range args {
+		if strings.EqualFold(arg, "--verbose") {
 			global.ProgramLevel.Set(slog.LevelDebug)
 		}
-
+		if strings.EqualFold(arg, "--output") {
+			if VerifyPGNOutput(args[i+1]) {
+				global.Output = args[i+1]
+			}
+		}
+		if strings.EqualFold(arg, "--experimental") {
+			global.AllowExperimental = true
+		}
 	}
 }
 
@@ -95,10 +105,10 @@ func printHelp(command string) {
 	os.Exit(0)
 }
 
-func VerifyPGNInput(file string) {
+func VerifyPGNInput(file string) bool {
 	if file == "" {
 		global.Logger.Error("Enter input filepath")
-		os.Exit(1)
+		return false
 	}
 
 	global.Logger.Debug(fmt.Sprintf("input file: %s", file))
@@ -110,14 +120,36 @@ func VerifyPGNInput(file string) {
 
 	if !strings.Contains(filetype, "chess") {
 		global.Logger.Error(fmt.Sprintf("Invalid Filetype: %s", file))
-		os.Exit(1)
+		return false
 	}
 
 	_, err := os.Stat(file)
 	if err != nil {
 		global.Logger.Error(fmt.Sprintf("Invalid Filepath: %s", file))
-		os.Exit(1)
+		return false
 	}
+	return true
+}
+
+func VerifyPGNOutput(file string) bool {
+	if file == "" {
+		global.Logger.Error("Enter output filepath")
+		return false
+	}
+
+	global.Logger.Debug(fmt.Sprintf("output file: %s", file))
+
+	ext := filepath.Ext(file)
+	filetype := mime.TypeByExtension(ext)
+
+	global.Logger.Debug(fmt.Sprintf("Mime output: %s", filetype))
+
+	if !strings.Contains(filetype, "chess") {
+		global.Logger.Error(fmt.Sprintf("Invalid Filetype: %s", file))
+		return false
+	}
+
+	return true
 }
 
 // include version, etc

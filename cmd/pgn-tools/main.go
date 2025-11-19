@@ -18,7 +18,14 @@ func main() {
 
 	switch program {
 	case "convert":
+		if global.AllowExperimental {
+			run.Convert(args)
+		} else {
+			fmt.Println("convert is an experimental feature not yet fully supported, use flag '--experimental' to run convert.")
+			os.Exit(0)
+		}
 	case "merge":
+		run.Merge(args)
 	case "query":
 		run.Query(args)
 	default:

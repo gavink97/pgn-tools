@@ -1,9 +1,14 @@
 package parser
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/gavink97/pgn-tools/internal/global"
 	"github.com/gavink97/pgn-tools/internal/types"
 )
 
@@ -121,5 +126,45 @@ func TestFindField(t *testing.T) {
 				t.Errorf("Incorrect Result: \nresult: %v \nexpected: %v", result.Interface(), expectedValue)
 			}
 		}
+	}
+}
+
+func TestWriteTo(t *testing.T) {
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Errorf("An error occured : %v", err)
+	}
+
+	fileName := "sample.pgn"
+	ext := filepath.Ext(fileName)
+	file := filepath.Join(filepath.Dir(filepath.Dir(dir)), fileName)
+
+	result := sampleQuery.WriteTo(file)
+	expect := fmt.Sprintf("%s/%s_%s%s", filepath.Dir(file), strings.TrimSuffix(fileName, ext), "elo>=2300_player!=carlsen", ext)
+
+	if result != expect {
+		t.Errorf("Incorrect Result: \nresult: %v \nexpected: %v", result, expect)
+	}
+
+	global.Output = "master-games.pgn"
+
+	result = sampleQuery.WriteTo(file)
+	expect = filepath.Join(dir, global.Output)
+
+	if result != expect {
+		t.Errorf("Incorrect Result: \nresult: %v \nexpected: %v", result, expect)
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Errorf("Unable to locate user home directory: %v", err)
+	}
+
+	global.Output = "~/testing/master-games.pgn"
+	expect = filepath.Join(homeDir, global.Output[2:])
+	result = sampleQuery.WriteTo(file)
+
+	if result != expect {
+		t.Errorf("Incorrect Result: \nresult: %v \nexpected: %v", result, expect)
 	}
 }

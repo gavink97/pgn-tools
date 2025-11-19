@@ -3,8 +3,6 @@ package run
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/gavink97/pgn-tools/internal/global"
@@ -27,14 +25,7 @@ func Query(args []string) {
 		os.Exit(1)
 	}
 
-	ext := filepath.Ext(input)
-
-	dir, file := filepath.Split(input)
-	baseName := strings.TrimSuffix(file, ext)
-
-	// name output based on query or set value?
-	output := fmt.Sprintf("%s%s_modified%s", dir, baseName, ext)
-
+	output := query.WriteTo(input)
 	global.Logger.Debug(fmt.Sprintf("Modifying pgn at: %s", output))
 
 	games, err := parser.ParsePGN(input)
