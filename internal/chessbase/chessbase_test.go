@@ -122,11 +122,7 @@ White: %s
 Black: %s
 Result: %s
 BlackElo: %d
-ECO: %s
-EventDate: %s
 WhiteElo: %d
-Source: %s
-FEN: %s
 Game: %s
 `,
 		result.Event,
@@ -137,30 +133,22 @@ Game: %s
 		result.Black,
 		result.Result,
 		result.BlackElo,
-		result.ECO,
-		result.EventDate,
 		result.WhiteElo,
-		result.Source,
-		result.FEN,
 		result.Game,
 	)
 
 	fmt.Print(res)
 
 	expected := types.NewGame(types.GameParams{
-		Event:     "Moscow Aeroflot op-A 17th",
-		Site:      "Moscow",
-		Date:      "2018.02.21",
-		Round:     "2",
-		White:     "Andreikin, Dmitry",
-		WhiteElo:  2712,
-		Black:     "Vavulin, Maksim",
-		BlackElo:  2575,
-		Result:    "1/2-1/2",
-		EventDate: "2018.02.21",
-		ECO:       "",
-		Source:    "",
-		FEN:       "",
+		Event:    "Moscow Aeroflot op-A 17th",
+		Site:     "Moscow",
+		Date:     "2018.02.21",
+		Round:    "2",
+		White:    "Andreikin, Dmitry",
+		WhiteElo: 2712,
+		Black:    "Vavulin, Maksim",
+		BlackElo: 2575,
+		Result:   "1/2-1/2",
 		//Game:      "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2 d5 5. a3 Bxc3+ 6. Qxc3 dxc4 7. Qxc4 b6 8. Bg5 Ba6 9. Qc3 Qd5 10. Bxf6 gxf6 11. f3 Nd7 12. Rc1 c5 13. e4 Qb7 14. dxc5 bxc5 15. Bxa6 Qxa6 16. Ne2 Rg8 17. Kf2 Rb8 18. Rc2 Ne5 19. Rd1 c4 20. Qd4 Kf8 21. Nf4 Qb6 22. Kf1 Ke7 23. Qxb6 1/2-1/2",
 		Game: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2 d5 5. a3 Bxc3 6. Qxc3 dxc4 7. Qxc4 b6 8. Bg5 Ba6 9. Qc3 Qd5 10. Bxf6 gxf6 11. f3 Nd7 12. Rc1 c5 13. e4 Qb7 14. dxc5 bxc5 15. Bxa6 Qxa6 16. Ne2 Rg8 17. Kf2 Rb8 18. Rc2 Ne5 19. Rd1 c4 20. Qd4 Kf8 21. Nf4 Qb6 22. Kf1 Ke7 23. Qxb6 1/2-1/2",
 	})

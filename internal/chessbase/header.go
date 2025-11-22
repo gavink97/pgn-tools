@@ -25,7 +25,7 @@ func getRoundSubround(cbhRecord []byte) (string, error) {
 	subround := int(cbhRecord[30])
 
 	if subround != 0 {
-		return fmt.Sprintf("%d(%d)", round, subround), nil
+		return fmt.Sprintf("%d.%d", round, subround), nil
 	}
 
 	return fmt.Sprintf("%d", round), nil

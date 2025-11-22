@@ -47,33 +47,55 @@ func WritePGN(filename string, game any) {
 	}
 }
 
-// make this FEN & if the header is empty not to include it
 func formatPGN(game *types.Game) string {
-	return fmt.Sprintf(`[Event "%s"]
+	out := fmt.Sprintf(`[Event "%s"]
 [Site "%s"]
 [Date "%s"]
 [Round "%s"]
 [White "%s"]
-[WhiteElo "%d"]
 [Black "%s"]
-[BlackElo "%d"]
-[Result "%s"]
-[EventDate "%s"]
-[ECO "%s"]
-[Source "%s"]
-%s
-
-`, game.Event,
+[Result "%s"]`,
+		game.Event,
 		game.Site,
 		game.Date,
 		game.Round,
 		game.White,
-		game.WhiteElo,
 		game.Black,
-		game.BlackElo,
 		game.Result,
-		game.EventDate,
-		game.ECO,
-		game.Source,
-		game.Game)
+	)
+
+	if game.WhiteElo != 0 {
+		out += "\n"
+		out += fmt.Sprintf(`[WhiteElo "%d"]`, game.WhiteElo)
+	}
+
+	if game.BlackElo != 0 {
+		out += "\n"
+		out += fmt.Sprintf(`[BlackElo "%d"]`, game.BlackElo)
+	}
+
+	if game.EventDate != "" {
+		out += "\n"
+		out += fmt.Sprintf(`[EventDate "%s"]`, game.EventDate)
+	}
+
+	if game.ECO != "" {
+		out += "\n"
+		out += fmt.Sprintf(`[ECO "%s"]`, game.ECO)
+	}
+
+	if game.FEN != "" {
+		out += "\n"
+		out += fmt.Sprintf(`[FEN "%s"]`, game.FEN)
+		out += "\n"
+		out += `[SetUp "1"]`
+	}
+
+	if game.Source != "" {
+		out += "\n"
+		out += fmt.Sprintf(`[Source "%s"]`, game.Source)
+	}
+
+	out += fmt.Sprintf("\n%s\n\n", game.Game)
+	return out
 }

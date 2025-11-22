@@ -90,21 +90,23 @@ func (cb *ChessBaseRecord) ExtractGame() (*types.Game, error) {
 
 	var fen string
 	var chessboard *Chessboard
+	var decodeOffset int
 
 	if gameInfo.ATypicalStart {
-		return nil, fmt.Errorf("not handling games that start at a fen atm")
 		fen, chessboard, err = decodeStartPosition(cb.CBG, gameOffset)
 		if err != nil {
 			global.Logger.Warn("unable to decode starting position")
 			return nil, err
 		}
+
+		decodeOffset = 32
 	} else {
 		fen = ""
 		chessboard = InitialChessboard()
+		decodeOffset = 4
 	}
 
-	// start here for ATypicalStart
-	game, err := Decode(cb.CBG[gameOffset+4:gameOffset+gameInfo.GameLength], chessboard, fen)
+	game, err := Decode(cb.CBG[gameOffset+decodeOffset:gameOffset+gameInfo.GameLength], chessboard, fen)
 	if err != nil {
 		global.Logger.Warn("unable to decode chess game due to error.")
 		return nil, err
@@ -112,7 +114,6 @@ func (cb *ChessBaseRecord) ExtractGame() (*types.Game, error) {
 
 	game += result
 
-	// add support for eco
 	return types.NewGame(types.GameParams{
 		Event:    event,
 		Site:     site,
@@ -122,12 +123,9 @@ func (cb *ChessBaseRecord) ExtractGame() (*types.Game, error) {
 		Black:    black,
 		Result:   result,
 		BlackElo: blackElo,
-		//ECO:       eco,
-		EventDate: date,
-		WhiteElo:  whiteElo,
-		//Source:    source,
-		FEN:  fen,
-		Game: game,
+		WhiteElo: whiteElo,
+		FEN:      fen,
+		Game:     game,
 	}), nil
 }
 
@@ -155,48 +153,12 @@ func getGameInfo(cbgFile []byte, gameNo int) (*ChessBaseGameInfo, error) {
 	return gameInfo, nil
 }
 
-// double check this later
 func decodePieceLocation(stream string) (*Chessboard, error) {
 	sIdx := 0
 	bIdx := 0
 
-	whiteQueens := [8]Coord{{-1, -1}}
-	whiteRooks := [8]Coord{{-1, -1}}
-	whiteBishops := [8]Coord{{-1, -1}}
-	whiteKnights := [8]Coord{{-1, -1}}
-	whiteKings := [8]Coord{{-1, -1}}
-	whitePawns := [8]Coord{{-1, -1}}
-
-	blackQueens := [8]Coord{{-1, -1}}
-	blackRooks := [8]Coord{{-1, -1}}
-	blackBishops := [8]Coord{{-1, -1}}
-	blackKnights := [8]Coord{{-1, -1}}
-	blackKings := [8]Coord{{-1, -1}}
-	blackPawns := [8]Coord{{-1, -1}}
-
-	pieceList := [13][8]Coord{
-		{},
-		whiteQueens,
-		whiteKnights,
-		whiteBishops,
-		whiteRooks,
-		blackQueens,
-		blackKnights,
-		blackBishops,
-		blackRooks,
-		whiteKings,
-		blackKings,
-		whitePawns,
-		blackPawns,
-	}
-
+	board := EmptyChessboard()
 	pieceCount := [13]int{}
-	position := [8][8]PieceInfo{}
-	for i := range position {
-		for j := range position[i] {
-			position[i][j] = PieceInfo{PieceType: EMPTY, PieceNo: -1}
-		}
-	}
 
 	for sIdx < len(stream) && bIdx < 64 {
 		if string(stream[sIdx]) == "0" {
@@ -215,60 +177,60 @@ func decodePieceLocation(stream string) (*Chessboard, error) {
 
 		switch piece {
 		case "10001":
-			position[i][j] = PieceInfo{PieceType: W_KING, PieceNo: 0} // can only have 1
-			pieceList[W_KING][0] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: W_KING, PieceNo: 0} // can only have 1
+			board.PieceList[W_KING][0] = Coord{X: i, Y: j}
 		case "10010":
 			idx := pieceCount[W_QUEEN]
-			position[i][j] = PieceInfo{PieceType: W_QUEEN, PieceNo: idx}
-			pieceList[W_QUEEN][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: W_QUEEN, PieceNo: idx}
+			board.PieceList[W_QUEEN][idx] = Coord{X: i, Y: j}
 			pieceCount[W_QUEEN]++
 		case "10011":
 			idx := pieceCount[W_KNIGHT]
-			position[i][j] = PieceInfo{PieceType: W_KNIGHT, PieceNo: idx}
-			pieceList[W_KNIGHT][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: W_KNIGHT, PieceNo: idx}
+			board.PieceList[W_KNIGHT][idx] = Coord{X: i, Y: j}
 			pieceCount[W_KNIGHT]++
 		case "10100":
 			idx := pieceCount[W_BISHOP]
-			position[i][j] = PieceInfo{PieceType: W_BISHOP, PieceNo: idx}
-			pieceList[W_BISHOP][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: W_BISHOP, PieceNo: idx}
+			board.PieceList[W_BISHOP][idx] = Coord{X: i, Y: j}
 			pieceCount[W_BISHOP]++
 		case "10101":
 			idx := pieceCount[W_ROOK]
-			position[i][j] = PieceInfo{PieceType: W_ROOK, PieceNo: idx}
-			pieceList[W_ROOK][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: W_ROOK, PieceNo: idx}
+			board.PieceList[W_ROOK][idx] = Coord{X: i, Y: j}
 			pieceCount[W_ROOK]++
 		case "10110":
 			idx := pieceCount[W_PAWN]
-			position[i][j] = PieceInfo{PieceType: W_PAWN, PieceNo: idx}
-			pieceList[W_PAWN][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: W_PAWN, PieceNo: idx}
+			board.PieceList[W_PAWN][idx] = Coord{X: i, Y: j}
 			pieceCount[W_PAWN]++
 		case "11001":
-			position[i][j] = PieceInfo{PieceType: B_KING, PieceNo: 0} // can only have 1
-			pieceList[B_KING][0] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: B_KING, PieceNo: 0} // can only have 1
+			board.PieceList[B_KING][0] = Coord{X: i, Y: j}
 		case "11010":
 			idx := pieceCount[B_QUEEN]
-			position[i][j] = PieceInfo{PieceType: B_QUEEN, PieceNo: idx}
-			pieceList[B_QUEEN][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: B_QUEEN, PieceNo: idx}
+			board.PieceList[B_QUEEN][idx] = Coord{X: i, Y: j}
 			pieceCount[B_QUEEN]++
 		case "11011":
 			idx := pieceCount[B_KNIGHT]
-			position[i][j] = PieceInfo{PieceType: B_KNIGHT, PieceNo: idx}
-			pieceList[B_KNIGHT][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: B_KNIGHT, PieceNo: idx}
+			board.PieceList[B_KNIGHT][idx] = Coord{X: i, Y: j}
 			pieceCount[B_KNIGHT]++
 		case "11100":
 			idx := pieceCount[B_BISHOP]
-			position[i][j] = PieceInfo{PieceType: B_BISHOP, PieceNo: idx}
-			pieceList[B_BISHOP][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: B_BISHOP, PieceNo: idx}
+			board.PieceList[B_BISHOP][idx] = Coord{X: i, Y: j}
 			pieceCount[B_BISHOP]++
 		case "11101":
 			idx := pieceCount[B_ROOK]
-			position[i][j] = PieceInfo{PieceType: B_ROOK, PieceNo: idx}
-			pieceList[B_ROOK][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: B_ROOK, PieceNo: idx}
+			board.PieceList[B_ROOK][idx] = Coord{X: i, Y: j}
 			pieceCount[B_ROOK]++
 		case "11110":
 			idx := pieceCount[B_PAWN]
-			position[i][j] = PieceInfo{PieceType: B_PAWN, PieceNo: idx}
-			pieceList[B_PAWN][idx] = Coord{X: i, Y: j}
+			board.Position[i][j] = PieceInfo{PieceType: B_PAWN, PieceNo: idx}
+			board.PieceList[B_PAWN][idx] = Coord{X: i, Y: j}
 			pieceCount[B_PAWN]++
 		default:
 			return nil, fmt.Errorf("invalid piece : %s pos: %v from %s", piece, sIdx, stream)
@@ -278,24 +240,19 @@ func decodePieceLocation(stream string) (*Chessboard, error) {
 		bIdx++
 	}
 
-	chessboard := NewChessboard(ChessboardParams{
-		Position:  position,
-		PieceList: pieceList,
-	})
+	return board, nil
 
-	return chessboard, nil
 }
 
 // only supports standard chess no 960 X-FEN
-// these game functions need reevaluation
 func posToFEN(position [8][8]PieceInfo, ep_file int, isBlackTurn bool, whiteLong bool, whiteShort bool, blackLong bool, blackShort bool, nextMoveNo int) (string, error) {
 	fen := ""
 
 	for i := 7; i >= 0; i-- {
 		square := 0
 		for j := range 8 {
-			pieceNo := position[j][i].PieceNo
-			if pieceNo == EMPTY {
+			pieceType := position[j][i].PieceType
+			if pieceType == 0 {
 				square++
 			} else {
 				if square > 0 {
@@ -303,7 +260,7 @@ func posToFEN(position [8][8]PieceInfo, ep_file int, isBlackTurn bool, whiteLong
 					square = 0
 				}
 
-				switch pieceNo {
+				switch pieceType {
 				case W_KING:
 					fen += "K"
 				case W_QUEEN:
@@ -328,6 +285,8 @@ func posToFEN(position [8][8]PieceInfo, ep_file int, isBlackTurn bool, whiteLong
 					fen += "n"
 				case B_PAWN:
 					fen += "p"
+				default:
+					return "", fmt.Errorf("unknown piece: %v", pieceType)
 				}
 			}
 		}
@@ -399,7 +358,6 @@ func posToFEN(position [8][8]PieceInfo, ep_file int, isBlackTurn bool, whiteLong
 	}
 
 	fen += "0 "
-
 	fen += fmt.Sprintf("%d", nextMoveNo)
 	return fen, nil
 }
@@ -459,6 +417,10 @@ func (cb *Chessboard) doMove(pieceInfo PieceInfo, cbEnc map[byte]Coord, token by
 
 	i := cb.PieceList[pieceType][pieceNo].X
 	j := cb.PieceList[pieceType][pieceNo].Y
+
+	if i < 0 || i > 7 || j < 0 || j > 7 {
+		return "", fmt.Errorf("invalid piece coordinates: (%d,%d) for piece type %d, number %d", i, j, pieceType, pieceNo)
+	}
 
 	cb.Position[i][j] = PieceInfo{PieceType: EMPTY, PieceNo: -1}
 
@@ -542,6 +504,8 @@ func (cb *Chessboard) doMove(pieceInfo PieceInfo, cbEnc map[byte]Coord, token by
 	}
 
 	// checks, checkmate
+	// check for disambiguations in the position (rooks, knights)
+	// disambiguations for multiple queens, bishops, rooks, knights
 
 	return move, nil
 }
@@ -585,7 +549,7 @@ func (cb *Chessboard) do2bMove(coords []Coord, promotionPiece uint16) (string, e
 		// two byte moves are used for promotions
 		// two byte moves should usually never be castles
 
-		if pieceType == W_PAWN && dst.X == 7 {
+		if pieceType == W_PAWN && dst.Y == 7 {
 			switch promotionPiece {
 			case 0:
 				promotedPieceType = W_QUEEN
@@ -604,7 +568,7 @@ func (cb *Chessboard) do2bMove(coords []Coord, promotionPiece uint16) (string, e
 			}
 		}
 
-		if pieceType == B_PAWN && dst.X == 0 {
+		if pieceType == B_PAWN && dst.Y == 0 {
 			switch promotionPiece {
 			case 0:
 				promotedPieceType = B_QUEEN
@@ -644,7 +608,7 @@ func (cb *Chessboard) do2bMove(coords []Coord, promotionPiece uint16) (string, e
 	if tPieceType != EMPTY {
 		move = fmt.Sprintf("%sx%s=%s", SQN[src.X][src.Y][:1], SQN[dst.X][dst.Y], promotionStr)
 	} else {
-		move = fmt.Sprintf("%s%s=%s", SQN[src.X][src.Y][:1], SQN[dst.X][dst.Y], promotionStr)
+		move = fmt.Sprintf("%s=%s", SQN[dst.X][dst.Y], promotionStr)
 	}
 
 	return move, nil
@@ -654,6 +618,8 @@ func Decode(gameBytes []byte, chessboard *Chessboard, fen string) (string, error
 	processedMoves := 0
 	idx := 0
 	game := ""
+
+	variations := []*State{}
 
 	var isWhiteToMove bool
 	var err error
@@ -682,10 +648,12 @@ func Decode(gameBytes []byte, chessboard *Chessboard, fen string) (string, error
 		token := byte((int(gameBytes[idx]) - processedMoves) % 256)
 		moveFound = false
 
-		if int(token) == 12 {
-			// last byte in gameBytes
-			return game, nil
-		}
+		/*
+			if int(token) == 12 {
+				// last byte in gameBytes
+				return game, nil
+			}
+		*/
 
 		if !bytes.Contains(SPECIAL_CODES, []byte{token}) {
 			processedMoves += 1
@@ -699,14 +667,20 @@ func Decode(gameBytes []byte, chessboard *Chessboard, fen string) (string, error
 		}
 
 		if token == 0xAA {
-			return "", fmt.Errorf("not handling null moves atm")
 			// null move
+			if isWhiteToMove {
+				game += fmt.Sprintf("%d. ", moveNo)
+			} else {
+				moveNo++
+			}
+
+			game += "-- "
+			isWhiteToMove = !isWhiteToMove
 			idx += 1
 			continue
 		}
 
 		if token == 0x29 {
-			return "", fmt.Errorf("not handling two byte moves atm")
 			// two byte move
 			tmp := make([]byte, 2)
 			tmp[0] = DEOBFUSCATE_2B[gameBytes[idx+1]-byte(processedMoves)]
@@ -719,14 +693,14 @@ func Decode(gameBytes []byte, chessboard *Chessboard, fen string) (string, error
 
 			src := twoByteMove & 0x3F
 			dst := (twoByteMove >> 6) & 0x3F
-			promote := (twoByteMove >> 12) & 0x3F
+			promotePiece := (twoByteMove >> 12) & 0x3F
 
 			coords := []Coord{
 				ABS_TO_XY[src],
 				ABS_TO_XY[dst],
 			}
 
-			move, err = chessboard.do2bMove(coords, promote)
+			move, err = chessboard.do2bMove(coords, promotePiece)
 			if err != nil {
 				global.Logger.Warn("an error occured performing a 2 byte move")
 				return "", err
@@ -741,19 +715,41 @@ func Decode(gameBytes []byte, chessboard *Chessboard, fen string) (string, error
 			game += fmt.Sprintf("%s ", move)
 			isWhiteToMove = !isWhiteToMove
 
-			fmt.Println(game)
-
+			processedMoves += 1
+			processedMoves %= 256
 			idx += 3
 			continue
 		}
 
+		// create a new branch, all moves will go to this new branch and we will keep doing this for new branches
+		// then we will in order append those branches back according to state with formatting
 		if token == 0xDC {
 			return "", fmt.Errorf("not handling variations atm")
 			// start of variation
+
+			/*
+				state := NewState(StateParams{
+					Chessboard:  chessboard.Clone(),
+					MoveNo:      moveNo,
+					IsWhiteTurn: isWhiteToMove,
+				})
+
+				variations = append(variations, state)
+			*/
 		}
 
 		if token == 0x0C {
+			// every game is terminated with 0x0C, ignore last otherwise pop from stack
 			// end of variation
+
+			if idx < len(gameBytes)-1 && len(variations) > 0 {
+				state := variations[len(variations)-1]
+				variations = variations[:len(variations)-1]
+
+				chessboard = state.Chessboard
+				moveNo = state.MoveNo
+				isWhiteToMove = state.IsWhiteTurn
+			}
 		}
 
 		if isWhiteToMove {
@@ -1195,5 +1191,6 @@ func Decode(gameBytes []byte, chessboard *Chessboard, fen string) (string, error
 
 		idx += 1
 	}
+
 	return game, nil
 }

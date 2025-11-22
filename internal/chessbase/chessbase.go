@@ -107,6 +107,7 @@ func GetMoveNoFEN(fen string) (int, error) {
 	return i, nil
 }
 
+//nolint:unused // Good for debugging
 func printPosition(chessboard *Chessboard) {
 	position := chessboard.Position
 

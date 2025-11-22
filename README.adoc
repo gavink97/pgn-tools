@@ -13,7 +13,7 @@ I was not happy with the performance of similar chess tools using python
 == Features
     - query games from pgn files
 	- reconcile multiple pgn files into one
-	- convert cbh files to pgn (experimental*)
+	- convert chessbase files to pgn (experimental*)
 
 == Getting started
 Download the binary or build from source
@@ -25,11 +25,10 @@ Download the binary or build from source
 
 == Experimental
 Convert is an experimental feature not yet fully supported, current drawbacks to using convert:
+
 	- No check / checkmate marks
 	- No variations
-	- No null moves
-	- No games that feature a promotion
-	- No games that start from a FEN position
+	- No disambiguations
 	- Incomplete dates default to November 30th
 
 == Contributing

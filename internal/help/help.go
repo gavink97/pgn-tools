@@ -27,12 +27,14 @@ Use "pgn-tools help <command>" for more information about a command.`
 Bug opens the default browser and starts a new bug report.`
 	Convert = `Usage: pgn-tools convert INPUT_PATH OUTPUT_PATH [--flags]
 
-Convert is an experimental feature and will most likely panic mid conversion.
-Please raise a bug report should such an instance occur.
+Convert is an experimental feature and comes with some drawbacks.
 
 Convert takes a chessbase database which must include a header file (.cbh),
 player file (.cbp), tournament file (.cbt), and game file (.cbg), all in the
-same directory as the input path, and converts it to a pgn database.`
+same directory as the input path, and converts it to a pgn database.
+
+Be aware that convert currently skips games that include variations, doesn't
+mark check and checkmates, and doesn't provide disambiguations.`
 	Merge = `Usage: pgn-tools merge PATH... '-o | --output PATH'  [--flags]
 
 Merge takes multiple pgn database paths or directories containing pgn databases
